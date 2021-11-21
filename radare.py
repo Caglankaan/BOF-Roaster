@@ -23,6 +23,7 @@ class Program:
         esp_r2.cmd("/a jmp esp")
         try:
             esp_splitted = esp_r2.cmd("").split("\n")
+            print("esp_splitted: ", esp_splitted)
             all_esp = []
             for esp in esp_splitted:
                 splitted = esp.split(" ")[0]
@@ -59,8 +60,6 @@ class Program:
         self.r2.cmd("ood")
         self.r2.cmd("")
         time.sleep(2)
-        #self.run_program()
-        #print("Restarted program")
 
     def get_register_value(self, register_code):
         self.r2.cmd("dr "+register_code)
