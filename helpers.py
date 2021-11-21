@@ -38,7 +38,7 @@ def return_pretty_hex(data):
         is_missing = False
         if type(char) != int:
             char = ord(char)
-        if char < 10:
+        if char < 16:
             is_missing = True
         char = hex(char)
         char = char[1:]
